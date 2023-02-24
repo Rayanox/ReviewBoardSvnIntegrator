@@ -40,28 +40,9 @@ public class IntegrationProcessor {
         dataService.purgeAndInsertLastNewCommits(newCommits);
     }
 
-    private void insertInList(SvnCommit commit, List<SvnCommit> newCommitsValid, List<SvnCommit> newCommitsUnValid) {
-        if(CommitValidator.validate(commit))
-            newCommitsValid.add(commit);
-        else
-            newCommitsUnValid.add(commit);
-    }
-
     private void insertUnvalidCommit(SvnCommit commit, List<SvnCommit> list) {
         if(!CommitValidator.validate(commit))
             list.add(commit);
-    }
-
-    private static List<SvnCommit> extractValidCommits(List<SvnCommit> newCommits) {
-        return newCommits.stream()
-                .filter(CommitValidator::validate)
-                .collect(Collectors.toList());
-    }
-
-    private static List<SvnCommit> extractUncorrectCommits(List<SvnCommit> newCommits) {
-        return newCommits.stream()
-                .filter(CommitValidator::unvalidate)
-                .collect(Collectors.toList());
     }
 
 }
