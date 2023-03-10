@@ -12,23 +12,28 @@ import java.util.List;
 @AllArgsConstructor
 public class BranchManager {
 
-    private SvnManager svnManager;
+    private final SvnManager svnManager;
+    private final WorkspaceManager workspaceManager;
 
     public void synchronizeSvnBranches(Application application) {
         List<Branch> svnBranches = svnManager.fetchAllBranches(application);
 
         svnBranches.stream()
                 .filter(application::isNewBranch)
+                .peek(workspaceManager::createBranchWorkspaceDir)
                 .forEach(application::addNewBranch);
 
-        application.getBranches()
+        List<Branch> branchesToDelete = application.getBranches()
                 .stream()
                 .filter(branchDb -> !svnBranches.contains(branchDb))
-                .toList()
-                .forEach(application::removeBranch);
+                .peek(workspaceManager::deleteBranchWorkspaceDir)
+                .toList();
+
+        branchesToDelete.forEach(application::removeBranch);
+        //.forEach(Branch::setToDeleteFlag);
     }
 
-    public void processCommitsAdd(BranchCommitWrapper branchCommitWrapper) {
+    public void processCommitsAddInBranch(BranchCommitWrapper branchCommitWrapper) {
         branchCommitWrapper
                 .getBranch()
                 .addCommits(branchCommitWrapper.getSvnCommits());

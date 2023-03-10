@@ -1,28 +1,31 @@
-package upgrade.karavel.services.reviewBoardSvnIntegrator.consumers;
+package upgrade.karavel.services.reviewBoardSvnIntegrator.services;
 
 import lombok.AllArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
-import org.tmatesoft.svn.core.SVNDirEntry;
-import org.tmatesoft.svn.core.SVNException;
-import org.tmatesoft.svn.core.SVNLogEntry;
+import org.tmatesoft.svn.core.*;
+import org.tmatesoft.svn.core.internal.wc.DefaultSVNOptions;
 import org.tmatesoft.svn.core.io.SVNRepository;
+import org.tmatesoft.svn.core.wc.SVNUpdateClient;
 import upgrade.karavel.services.reviewBoardSvnIntegrator.configuration.SvnConfigResolver;
 import upgrade.karavel.services.reviewBoardSvnIntegrator.configuration.SvnProperties;
 import upgrade.karavel.services.reviewBoardSvnIntegrator.dao.applications.Application;
 import upgrade.karavel.services.reviewBoardSvnIntegrator.dao.commit.Branch;
 import upgrade.karavel.services.reviewBoardSvnIntegrator.dao.commit.SvnCommit;
-
+import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @AllArgsConstructor
-public class SvnConsumer {
+@Log4j2
+public class SvnService {
 
-    private SvnConfigResolver svnConfigResolver;
-    private SvnProperties svnProperties;
+    private final SvnConfigResolver svnConfigResolver;
+    private final SvnProperties svnProperties;
 
-    public List<SvnCommit> fetchNewCommitsOfBranch(Branch branch) {
+    public Stream<SvnCommit> fetchNewCommitsOfBranch(Branch branch) {
         SVNRepository svnRepository = svnConfigResolver.resolveRepository(branch.getApplication());
 
         long lastRevisionId = branch
@@ -31,13 +34,12 @@ public class SvnConsumer {
                 .orElse(0L);
 
         if(lastRevisionId > branch.getApplication().getLastRevisionIdOnServer())
-            return Collections.emptyList();
+            return Stream.empty();
 
         try {
             Collection<SVNLogEntry> logEntries = svnRepository.log(new String[] {getBranchPath(branch)}, null, lastRevisionId, -1, false, true);
             return logEntries.stream()
-                    .map(log -> SvnCommit.buildFrom(log, branch))
-                    .collect(Collectors.toList());
+                    .map(log -> SvnCommit.buildFrom(log, branch));
         } catch (SVNException e) {
             throw new RuntimeException(e);
         }
@@ -64,6 +66,22 @@ public class SvnConsumer {
         try {
             return repository.getLatestRevision();
         } catch (SVNException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void checkoutRepo(Branch branch, File targetWorkspace) {
+        if(targetWorkspace.listFiles().length != 0) {
+            log.warn("A repo already exist at this path: {}", targetWorkspace.getPath());
+            return;
+        }
+
+        SVNRepository svnRepository = svnConfigResolver.resolveRepository(branch.getApplication());
+        try {
+            SVNUpdateClient updateClient = new SVNUpdateClient(svnRepository.getAuthenticationManager(), new DefaultSVNOptions());
+            updateClient.doCheckout(svnRepository.getLocation().appendPath(getBranchPath(branch), true), targetWorkspace,null,null, SVNDepth.EMPTY,false);
+        } catch (SVNException e) {
+            e.printStackTrace();
             throw new RuntimeException(e);
         }
     }

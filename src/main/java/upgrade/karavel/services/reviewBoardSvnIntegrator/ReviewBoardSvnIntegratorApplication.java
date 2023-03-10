@@ -1,28 +1,33 @@
 package upgrade.karavel.services.reviewBoardSvnIntegrator;
 
-import lombok.Builder;
-import lombok.extern.java.Log;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.PropertySource;
 import upgrade.karavel.services.reviewBoardSvnIntegrator.configuration.SvnProperties;
 import upgrade.karavel.services.reviewBoardSvnIntegrator.core.IntegrationProcessor;
-import upgrade.karavel.services.reviewBoardSvnIntegrator.dao.DatabaseService;
+import upgrade.karavel.services.reviewBoardSvnIntegrator.dao.ExceptionService;
 
 @SpringBootApplication
 @EnableConfigurationProperties({SvnProperties.class})
-@Builder
-@Log
+@PropertySource({"classpath:core.properties"})
+@Log4j2
+@RequiredArgsConstructor
 public class ReviewBoardSvnIntegratorApplication implements  CommandLineRunner{
 
 	private static final int MAX_RETRY = 3;
-	private static final int SLEEP_DURATION_SECONDS = 60;
+
+	@Value("${sleep-intervale-minutes}")
+	private int sleepDurationIntervaleMinutes;
 
 	public static boolean IS_FIRST_RUN = false;
 
-	private IntegrationProcessor processorLoop;
-	private DatabaseService databaseService;
+	private final IntegrationProcessor processorLoop;
+	private final ExceptionService exceptionService;
 
 	public static void main(String[] args) {
 		SpringApplication.run(ReviewBoardSvnIntegratorApplication.class, args);
@@ -36,13 +41,15 @@ public class ReviewBoardSvnIntegratorApplication implements  CommandLineRunner{
 				processorLoop.process();
 				retryCount = 0;
 			} catch (Exception e) {
-				databaseService.insertException(e);
+				exceptionService.insertException(e);
 				e.printStackTrace();
 				retryCount++;
 			}
 			IS_FIRST_RUN = false;
-			log.fine(String.format("Sleep for %s seconds", SLEEP_DURATION_SECONDS));
-			Thread.sleep(SLEEP_DURATION_SECONDS * 1000L);
+			log.debug("Sleep for {} minutes", sleepDurationIntervaleMinutes);
+			Thread.sleep(sleepDurationIntervaleMinutes * 60L * 1000L);
 		}
 	}
 }
+
+

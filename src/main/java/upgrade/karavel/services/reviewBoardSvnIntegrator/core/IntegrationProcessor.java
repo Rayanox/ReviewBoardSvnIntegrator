@@ -3,32 +3,36 @@ package upgrade.karavel.services.reviewBoardSvnIntegrator.core;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
-import upgrade.karavel.services.reviewBoardSvnIntegrator.dao.DatabaseService;
 import upgrade.karavel.services.reviewBoardSvnIntegrator.dao.applications.Application;
+import upgrade.karavel.services.reviewBoardSvnIntegrator.dao.applications.ApplicationRepository;
+import upgrade.karavel.services.reviewBoardSvnIntegrator.dao.commit.SvnCommit;
 import upgrade.karavel.services.reviewBoardSvnIntegrator.features.EmailNotifier;
 import upgrade.karavel.services.reviewBoardSvnIntegrator.features.managers.*;
+import java.util.List;
 
 @Service
 @AllArgsConstructor
 public class IntegrationProcessor {
 
-    private DatabaseService databaseService;
-    private ReviewManager reviewManager;
-    private EmailNotifier emailNotifier;
-    private BranchManager branchManager;
-    private CommitManager commitManager;
-    private ApplicationManager applicationManager;
+    private final ReviewManager reviewManager;
+    private final EmailNotifier emailNotifier;
+    private final BranchManager branchManager;
+    private final CommitManager commitManager;
+    private final ApplicationManager applicationManager;
+    private final ApplicationRepository applicationRepository;
+    private final WorkspaceManager workspaceManager;
 
     @Transactional
     public void process() {
-        applicationManager.getApplications()
-                .stream()
+        List<Application> applications = applicationManager.getApplications();
+
+        applications.stream()
                 .peek(branchManager::synchronizeSvnBranches)
                 .peek(commitManager::synchronizeSvnCommits)
-                .peek(databaseService::saveApplication)
                 .flatMap(Application::streamAllCommits)
-//                .peek(reviewManager::updateReviews)
-//                .forEach(emailNotifier::notifyInvalidCommit);
-                .forEach((t) -> {});
+                .filter(SvnCommit::isNewCommit)
+                .forEach(reviewManager::processReview);
+
+        applicationRepository.saveAllAndFlush(applications);
     }
 }

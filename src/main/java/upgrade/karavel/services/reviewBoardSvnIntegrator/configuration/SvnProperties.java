@@ -10,7 +10,7 @@ import java.util.List;
 
 @Configuration
 @ConfigurationProperties(prefix = "svn")
-@PropertySource({"classpath:svn-applications-configs.properties", "classpath:svn-credentials.properties"})
+@PropertySource({"classpath:svn-applications-configs.properties", "classpath:credentials.properties"})
 @Data
 public class SvnProperties {
 

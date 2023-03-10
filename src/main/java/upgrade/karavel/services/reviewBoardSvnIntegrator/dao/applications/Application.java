@@ -11,6 +11,7 @@ import upgrade.karavel.services.reviewBoardSvnIntegrator.configuration.SvnWrappe
 import upgrade.karavel.services.reviewBoardSvnIntegrator.dao.commit.Branch;
 import upgrade.karavel.services.reviewBoardSvnIntegrator.dao.commit.SvnCommit;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -28,12 +29,14 @@ public class Application {
     private Long id;
     private String name;
     private String svnRootLink;
+    private String repositoryName;
+    private LocalDateTime dateInsertionDb;
 
     @Transient
     private Long lastRevisionIdOnServer;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "application", orphanRemoval = true)
-    private List<Branch> branches;
+    private List<Branch> branches = new ArrayList<>();
 
     public Stream<SvnCommit> streamAllCommits() {
         return getBranches().stream().flatMap(branch -> branch.getCommitList().stream());
@@ -67,26 +70,29 @@ public class Application {
         return 31 + (name != null ? name.hashCode() : 0);
     }
 
-    private void checkNonNullBranches() {
-        if(Objects.isNull(branches))
-            branches = new ArrayList<>();
-    }
-
     public void addNewBranch(Branch branch) {
-        checkNonNullBranches();
         branch.setNewBranch(true);
         branches.add(branch);
     }
 
     public void removeBranch(Branch branch) {
-        checkNonNullBranches();
+        branch.getCommitList().forEach(commit -> commit.setBranch(null));
         branches.remove(branch);
     }
 
     public void removeLastCommits() {
-        checkNonNullBranches();
         branches.stream()
                 .filter(Branch::notNewBranch)
                 .forEach(Branch::removeLastCommit);
+    }
+
+    @Override
+    public String toString() {
+        return "Application{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", svnRootLink='" + svnRootLink + '\'' +
+                ", lastRevisionIdOnServer=" + lastRevisionIdOnServer +
+                '}';
     }
 }

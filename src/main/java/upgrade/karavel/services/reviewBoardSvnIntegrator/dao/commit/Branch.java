@@ -8,10 +8,8 @@ import lombok.NoArgsConstructor;
 import org.tmatesoft.svn.core.SVNDirEntry;
 import upgrade.karavel.services.reviewBoardSvnIntegrator.dao.applications.Application;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Entity
 @Builder
@@ -35,6 +33,8 @@ public class Branch {
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "branch", orphanRemoval = true)
     private List<SvnCommit> commitList;
 
+    private LocalDateTime dateInsertionDb;
+
     @Transient
     private boolean newBranch = false;
 
@@ -44,8 +44,7 @@ public class Branch {
             return Optional.empty();
 
         return commitList.stream()
-                .sorted()
-                .findFirst();
+                .max(Comparator.comparing(SvnCommit::getRevisionId));
     }
 
     public void removeLastCommit() {
@@ -84,6 +83,7 @@ public class Branch {
         return Branch.builder()
                 .isTrunk(true)
                 .application(application)
+                .dateInsertionDb(LocalDateTime.now())
                 .branchName("trunk")
                 .build();
     }
@@ -100,5 +100,16 @@ public class Branch {
     private void checkNonNullCommitList() {
         if(Objects.isNull(commitList))
             commitList = new ArrayList<>();
+    }
+
+    @Override
+    public String toString() {
+        return "Branch{" +
+                "id=" + id +
+                ", application=" + application +
+                ", branchName='" + branchName + '\'' +
+                ", isTrunk=" + isTrunk +
+                ", newBranch=" + newBranch +
+                '}';
     }
 }

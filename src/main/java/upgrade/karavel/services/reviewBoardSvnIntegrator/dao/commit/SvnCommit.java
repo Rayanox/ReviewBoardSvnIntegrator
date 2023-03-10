@@ -1,25 +1,25 @@
 package upgrade.karavel.services.reviewBoardSvnIntegrator.dao.commit;
 
-import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.util.Assert;
+import org.apache.commons.lang3.StringUtils;
 import org.tmatesoft.svn.core.SVNLogEntry;
 import upgrade.karavel.services.reviewBoardSvnIntegrator.features.managers.CommitManager;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Objects;
+import java.util.Optional;
 
 @Entity
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class SvnCommit implements  Comparable<SvnCommit> {
+public class SvnCommit {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,28 +28,29 @@ public class SvnCommit implements  Comparable<SvnCommit> {
     private String comment;
     private LocalDateTime date;
     private String commiterName;
-    @Nullable
     private String jiraId;
+    private Long reviewId;
+    private LocalDateTime dateInsertionDb;
 
     @JoinColumn(name = "branch_id")
     @ManyToOne(cascade = CascadeType.ALL)
     private Branch branch;
+
+    @Transient
+    private boolean newCommit = false;
+    @Transient
+    private boolean newReview = false;
 
     public static SvnCommit buildFrom(SVNLogEntry svnLogEntry, Branch branch) {
         return SvnCommit.builder()
                 .revisionId(svnLogEntry.getRevision())
                 .commiterName(svnLogEntry.getAuthor())
                 .date(LocalDateTime.ofInstant(svnLogEntry.getDate().toInstant(), ZoneId.systemDefault()))
+                .dateInsertionDb(LocalDateTime.now())
                 .comment(CommitManager.cutCommentIfNeeded(svnLogEntry.getMessage()))
                 .branch(branch)
+                .newCommit(true)
                 .build();
-    }
-
-    @Override
-    public int compareTo(SvnCommit commit) {
-        Assert.notNull(commit, "SvnCommit cannot be compared with null commit");
-        Assert.notNull(commit.getRevisionId(), "SvnCommit cannot have a null revision ID");
-        return commit.getRevisionId().compareTo(revisionId);
     }
 
     @Override
@@ -68,6 +69,13 @@ public class SvnCommit implements  Comparable<SvnCommit> {
     }
 
     public boolean isCommentReviewIdValid() {
-        return Objects.nonNull(jiraId);
+        return StringUtils.isNotBlank(jiraId);
+    }
+
+    public Optional<Long> getResolvedReviewId() {
+        return branch.getCommitList().stream()
+                .filter(commit -> Objects.nonNull(commit.getReviewId()))
+                .map(SvnCommit::getReviewId)
+                .findFirst();
     }
 }
