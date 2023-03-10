@@ -2,6 +2,8 @@
 This service watches the new commits on several SVN repositories and manage reviews or new revisions on ReviewBoard. The commits must contain the Jira ID (you can make a pull request to manage other IDs than jira's).
 
 ## Prerequisites
+- A Reviewboard server (using Docker, find the docker-compose.yml file here [Docker-Compose](https://github.com/reviewboard/reviewboard/tree/master/contrib/docker/examples/))  (configure the property file for connection details)
+- A SVN Server (configure the property file for connection details) 
 - Jdk 17
 - Maven
 - RbTools installed and bin folder referenced in PATH environment variable. Download link: https://www.reviewboard.org/downloads/rbtools/
