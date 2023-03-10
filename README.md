@@ -22,6 +22,7 @@ Or with Intellij you can just start the program normally:
 - Implement all the NotImplementedException throws
 - Add all the missing / remaining projects in ApplicationsConfig.java (ex: CP-API, CS, CS-API, ...)
 - Implement new features:
+  - Add auto-management RB groups -> 1 group per new created branch. To remove when branch doesn't exist anymore on server. Manage future user add to repository lately.
   - Add more commit data in description of review
   - Manage review per Application
   - Auto-update new repo add in config
