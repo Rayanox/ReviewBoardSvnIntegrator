@@ -36,4 +36,4 @@ target/
 
 application-karavel.properties
 application-credentials.properties
-**/svn-credentials.properties
+**/credentials.properties

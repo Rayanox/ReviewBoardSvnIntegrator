@@ -1,4 +1,4 @@
-package upgrade.karavel.services.reviewBoardSvnIntegrator.consumers;
+package upgrade.karavel.services.reviewBoardSvnIntegrator.services;
 
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
-public class SvnConsumer {
+public class SvnService {
 
     private SvnConfigResolver svnConfigResolver;
     private SvnProperties svnProperties;

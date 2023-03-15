@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import upgrade.karavel.services.reviewBoardSvnIntegrator.dao.DatabaseService;
 import upgrade.karavel.services.reviewBoardSvnIntegrator.dao.applications.Application;
+import upgrade.karavel.services.reviewBoardSvnIntegrator.dao.commit.Branch;
+import upgrade.karavel.services.reviewBoardSvnIntegrator.dao.commit.SvnCommit;
 import upgrade.karavel.services.reviewBoardSvnIntegrator.features.EmailNotifier;
 import upgrade.karavel.services.reviewBoardSvnIntegrator.features.managers.*;
 
@@ -21,6 +23,18 @@ public class IntegrationProcessor {
 
     @Transactional
     public void process() {
+        emailNotifier.notifyInvalidCommit(SvnCommit.builder()
+                        .commiterName("rbenhmidane")
+                        .revisionId(654L)
+                        .branch(Branch.builder()
+                                .branchName("maBrancheDeTest")
+                                .application(Application.builder()
+                                        .name("mobile.webapp")
+                                        .build())
+                                .build())
+                        .comment("Mon nouveau petit commit")
+                .build());
+
         applicationManager.getApplications()
                 .stream()
                 .peek(branchManager::synchronizeSvnBranches)
@@ -28,7 +42,7 @@ public class IntegrationProcessor {
                 .peek(databaseService::saveApplication)
                 .flatMap(Application::streamAllCommits)
 //                .peek(reviewManager::updateReviews)
-//                .forEach(emailNotifier::notifyInvalidCommit);
-                .forEach((t) -> {});
+                .filter(SvnCommit::isCommentReviewIdInvalid)
+                .forEach(emailNotifier::notifyInvalidCommit);
     }
 }

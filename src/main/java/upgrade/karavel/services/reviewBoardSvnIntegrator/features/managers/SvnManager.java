@@ -2,7 +2,7 @@ package upgrade.karavel.services.reviewBoardSvnIntegrator.features.managers;
 
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
-import upgrade.karavel.services.reviewBoardSvnIntegrator.consumers.SvnConsumer;
+import upgrade.karavel.services.reviewBoardSvnIntegrator.services.SvnService;
 import upgrade.karavel.services.reviewBoardSvnIntegrator.dao.applications.Application;
 import upgrade.karavel.services.reviewBoardSvnIntegrator.dao.commit.Branch;
 import upgrade.karavel.services.reviewBoardSvnIntegrator.dao.commit.SvnCommit;
@@ -16,16 +16,16 @@ import static upgrade.karavel.services.reviewBoardSvnIntegrator.ReviewBoardSvnIn
 @AllArgsConstructor
 public class SvnManager {
 
-    private SvnConsumer svnConsumer;
+    private SvnService svnService;
 
     public List<Branch> fetchAllBranches(Application application) {
-        List<Branch> allBranches = svnConsumer.fetchAllBranchesForOneApplication(application);
+        List<Branch> allBranches = svnService.fetchAllBranchesForOneApplication(application);
         allBranches.add(Branch.buildTrunkFrom(application));
         return allBranches;
     }
 
     public BranchCommitWrapper getLastNewCommitsOfBranche(Branch svnBranch) {
-        List<SvnCommit> newCommitsOfBranch = svnConsumer.fetchNewCommitsOfBranch(svnBranch);
+        List<SvnCommit> newCommitsOfBranch = svnService.fetchNewCommitsOfBranch(svnBranch);
 
         if(IS_FIRST_RUN) {
             newCommitsOfBranch = newCommitsOfBranch.stream()
@@ -41,7 +41,7 @@ public class SvnManager {
     }
 
     public void updateLastRevisionIdOfServer(Application application) {
-        application.setLastRevisionIdOnServer(svnConsumer.fetchLastCommitId(application));
+        application.setLastRevisionIdOnServer(svnService.fetchLastCommitId(application));
     }
 
 

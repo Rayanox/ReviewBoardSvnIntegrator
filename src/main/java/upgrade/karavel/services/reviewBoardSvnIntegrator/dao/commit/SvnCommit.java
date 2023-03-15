@@ -70,4 +70,19 @@ public class SvnCommit implements  Comparable<SvnCommit> {
     public boolean isCommentReviewIdValid() {
         return Objects.nonNull(jiraId);
     }
+
+    public boolean isCommentReviewIdInvalid() {
+        return !isCommentReviewIdValid();
+    }
+
+    @Override
+    public String toString() {
+        return String.format(
+                "Application: '%s' | branche: '%s' | Commit ID: '%d' | Commentaire: '%s'.",
+                branch.getApplication().getName(),
+                branch.getBranchName(),
+                revisionId,
+                comment
+        );
+    }
 }
